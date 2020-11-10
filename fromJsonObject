@@ -1,0 +1,45 @@
+@Test
+    public void gson_003() {
+        Result<User> userResult = new Result<>();
+        userResult.data = new User();
+        userResult.data.name = "Toom";
+        userResult.data.age = "11";
+        Gson gson = new Gson();
+        String string = gson.toJson(userResult);
+        System.out.println("string=" + string);
+        Result<User> result = fromJsonObject(string, User.class);
+        System.out.println(result.data);
+    }
+
+    static <T> Result<T> fromJsonObject(String jsonStr, Class<T> clazz) {
+        Type type = new ParameterizedTypeImpl(Result.class, new Class[]{clazz});
+        Gson gson = new Gson();
+        return gson.fromJson(jsonStr, type);
+    }
+
+    static class Result<T> {
+        T data;
+    }
+
+    static class ParameterizedTypeImpl implements ParameterizedType {
+        private final Class raw;
+        private final Type[] args;
+        public ParameterizedTypeImpl(Class raw, Type[] args) {
+            this.raw = raw;
+            this.args = args != null ? args : new Type[0];
+        }
+        @Override
+        public Type[] getActualTypeArguments() {
+            return args;
+        }
+        @Override
+        public Type getRawType() {
+            return raw;
+        }
+        @Override
+        public Type getOwnerType() {return null;}
+    }
+    
+    -------------
+    string={"data":{"name":"Toom","age":"11"}}
+    User{name='Toom', age='11'}
