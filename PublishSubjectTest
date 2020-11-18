@@ -1,0 +1,79 @@
+ @Test
+    public void test_010() {
+        Observable<String> observable = Observable.unsafeCreate(new ObservableSource<String>(){
+            PublishSubject<String> cacheSubject = PublishSubject.create();
+            PublishSubject<String> dbSubject = PublishSubject.create();
+
+
+            @Override
+            public void subscribe(@NonNull Observer<? super String> observer) {
+                cacheSubject.doOnComplete(new Action() {
+                    @Override
+                    public void run() throws Exception {
+                        System.out.println("observer onComplete");
+                        //observer.onComplete();
+                    }
+                }).subscribe(observer);
+                dbSubject.doOnComplete(new Action() {
+                    @Override
+                    public void run() throws Exception {
+                        System.out.println("cacheSubject onComplete");
+                        //cacheSubject.onComplete();
+                    }
+                }).subscribe(cacheSubject);
+
+                String data = null;
+                if (data != null) {
+                    cacheSubject.onNext(data);
+                } else {
+                    loadFromDb();
+                }
+                loadFromNet();
+            }
+
+            private void loadFromDb() {
+                String data = "select * from table";
+                dbSubject.onNext(data);
+            }
+
+            private void loadFromNet() {
+                Observable<String> netObservable = Observable.unsafeCreate(new ObservableSource<String>() {
+                    @Override
+                    public void subscribe(@NonNull Observer<? super String> observer) {
+                        String data = "get data from net";
+                        observer.onNext(data);
+                        observer.onComplete();
+                    }
+                });
+                netObservable.doOnComplete(new Action() {
+                    @Override
+                    public void run() throws Exception {
+                        System.out.println("dbSubject onComplete");
+                        //dbSubject.onComplete();
+                    }
+                }).subscribe(dbSubject);
+            }
+        });
+
+        observable.subscribe(new Observer<String>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable d) {
+                System.out.println("onSubscribe");
+            }
+
+            @Override
+            public void onNext(@NonNull String s) {
+                System.out.println("onNext: " + s);
+            }
+
+            @Override
+            public void onError(@NonNull Throwable e) {
+                System.out.println("onError");
+            }
+
+            @Override
+            public void onComplete() {
+                System.out.println("onComplete");
+            }
+        });
+    }
